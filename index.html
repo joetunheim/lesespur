@@ -1,0 +1,617 @@
+<!doctype html><html lang="de"><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Lesespur selber machen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Lexend:wght@400;500;600&family=Gochi+Hand&display=swap">
+<style>
+/* SHELL (gemeinsam für alle Silent-Input-Decks W11). Eine 1600x900-Bühne, skaliert. Nur helles Schema (Projektion). */
+:root{
+  --bg:#EEF2F7; --stage:#FFFFFF; --ink:#14213D; --muted:#5B6B85; --line:#D8E0EC; --soft:#F4F7FB;
+  --blue:#1E63D6; --green:#1D9A50; --stop:#E2412A; --amber:#E9A200; --orange:#F07C1A; --red:#D7263D; --yellow:#F2C300;
+  --pencil:#6B7280;
+  --f-display:"Bricolage Grotesque","Arial Rounded MT Bold","Segoe UI",system-ui,sans-serif;
+  --f-body:"Lexend","Segoe UI",system-ui,sans-serif;
+  --f-hand:"Gochi Hand","Comic Sans MS","Segoe Print",cursive;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hidden}
+.wrap{height:100%;box-sizing:border-box;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px}
+.fit{position:relative;width:100%;height:100%}
+.stage{position:absolute;left:0;top:0;width:1600px;height:900px;transform-origin:0 0;background:var(--stage);border-radius:18px;box-shadow:0 10px 40px rgba(20,33,61,.12);overflow:hidden}
+
+/* Kopfzeile */
+.hdr{position:absolute;left:0;right:0;top:0;height:104px;display:flex;align-items:center;gap:24px;padding:0 36px;border-bottom:3px solid var(--line);background:var(--soft)}
+.hdr .part{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.hdr .part b{font-family:var(--f-display);font-size:32px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr .part span{font-size:20px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mats{display:flex;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:#fff;border:2px solid var(--line);font-size:20px;font-weight:600;white-space:nowrap}
+.chip svg{width:30px;height:30px}
+.chip svg.pc{width:62px;height:18px}
+.social{display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:12px;background:#fff;border:2px solid var(--line)}
+.social svg{width:38px;height:42px;color:var(--ink)}
+.noise{display:flex;gap:6px;align-items:center}
+.noise .lv{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-size:28px;font-weight:800;color:#9AA8BE;background:#fff;border:3px solid var(--line)}
+.noise .lv.on{color:#fff;transform:scale(1.18)}
+.noise .lv.on.l0{background:var(--blue);border-color:var(--blue)}
+.noise .lv.on.l1{background:var(--amber);border-color:var(--amber)}
+.noise .lv.on.l2{background:var(--green);border-color:var(--green)}
+.noise .lbl{font-size:20px;font-weight:600;margin-left:10px;min-width:150px}
+.timer{display:flex;align-items:center;gap:6px}
+.timer[hidden]{display:none!important}
+.timer button{font:inherit;border:0;cursor:pointer}
+.t-adj{width:40px;height:40px;border-radius:10px;background:#fff;border:2px solid var(--line)!important;font-size:24px!important;color:var(--muted)}
+.t-face{position:relative;width:92px;height:92px;border-radius:50%;background:#fff;display:grid;place-items:center;padding:0}
+.t-face svg{position:absolute;inset:0;width:92px;height:92px;transform:rotate(-90deg)}
+.t-face .tt{position:relative;font-family:var(--f-display);font-size:25px;font-weight:800;font-variant-numeric:tabular-nums}
+.t-face .st{position:absolute;bottom:12px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.6px}
+.timer.run .t-face .st{color:var(--green)}
+.timer.done .t-face{animation:pulse .6s ease-in-out 6}
+@keyframes pulse{50%{transform:scale(1.15);background:#FFE3DE}}
+
+/* Fusszeile */
+.nav{position:absolute;left:0;right:0;bottom:0;height:92px;display:flex;align-items:center;gap:16px;padding:0 32px;border-top:3px solid var(--line);background:var(--soft)}
+.dots{display:flex;gap:8px;flex:1;align-items:center}
+.dots i{width:14px;height:14px;border-radius:50%;background:var(--line)}
+.dots i.done{background:#9AB3DA}
+.dots i.cur{background:var(--ink);width:34px;border-radius:7px}
+.dots i.pz{outline:2px dashed var(--amber);outline-offset:2px}
+.keys{font-size:15px;color:#8896AC;margin-right:6px}
+.kpill{font:inherit;font-size:15px;color:#8896AC;background:transparent;border:1.5px dashed #C3CDDC;border-radius:999px;padding:5px 12px;cursor:pointer}
+.nbtn{font:inherit;cursor:pointer;border:0;border-radius:16px;height:68px;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-size:26px;font-weight:600}
+.nbtn svg{width:34px;height:34px}
+.nbtn.prev{width:90px;background:#fff;border:2px solid var(--line);color:var(--muted)}
+.nbtn.next{width:150px;background:var(--ink);color:#fff}
+.nbtn.next.more{background:var(--blue)}
+.nbtn.stopb{width:90px;background:var(--stop);color:#fff}
+.nbtn:focus-visible,.t-face:focus-visible,.t-adj:focus-visible,.kpill:focus-visible,.vpill:focus-visible{outline:4px solid var(--amber);outline-offset:3px}
+.count{font-size:18px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
+
+/* Folien */
+.slide{position:absolute;left:56px;right:56px;top:128px;bottom:112px;display:none;flex-direction:column;gap:24px}
+.slide.active{display:flex}
+h1,h2{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.5px}
+h1{font-size:80px;line-height:1.02;font-weight:800}
+h2{font-size:56px;line-height:1.05;font-weight:800}
+.eyebrow{font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.hl{color:var(--blue)}
+[data-b]{opacity:0;transform:translateY(10px);transition:opacity .35s ease,transform .35s ease}
+[data-b].on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){[data-b],.ln{transition:none!important}}
+body[data-v="A"] [data-var="B"],body[data-v="B"] [data-var="A"]{display:none!important}
+body[data-k="c"] [data-k="a"],body[data-k="a"] [data-k="c"]{display:none!important}
+.slide.puffer::before{content:"PUFFER · falls Zeit bleibt";position:absolute;right:0;top:-18px;font-size:18px;font-weight:700;letter-spacing:1px;color:#8A5A00;background:#FFF1CC;border:2px dashed var(--amber);border-radius:999px;padding:4px 14px}
+
+.row{display:flex;gap:24px}
+.card{background:var(--soft);border:3px solid var(--line);border-radius:22px;padding:22px 26px}
+.ico{width:64px;height:64px;flex:none}
+.big-ico{width:120px;height:120px}
+
+/* Start */
+.agenda{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:6px}
+.ag{display:flex;gap:22px;align-items:center}
+.ag .n{width:68px;height:68px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:var(--f-display);font-size:38px;font-weight:800;flex:none}
+.ag b{display:block;font-family:var(--f-display);font-size:36px}
+.ag small{display:block;font-size:23px;color:var(--muted);margin-top:4px}
+.goal{display:flex;align-items:center;gap:20px;font-size:32px;font-weight:600;background:#E7F0FF;border-radius:18px;padding:16px 24px}
+.goal svg{width:56px;height:56px;flex:none;color:var(--blue)}
+.watch{display:flex;align-items:center;gap:18px;font-size:30px;font-weight:600;color:var(--muted);margin-top:auto}
+.watch svg{width:66px;height:66px;color:var(--ink)}
+
+/* Signale */
+.sig{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;flex:1}
+.sig .card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center}
+.sig .card b{font-family:var(--f-display);font-size:36px}
+.sig .card span{font-size:22px;color:var(--muted)}
+.lvls{display:flex;flex-direction:column;gap:10px;align-items:stretch;width:100%}
+.lvls div{display:flex;align-items:center;gap:12px;font-size:22px;font-weight:600}
+.lvls i{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:#fff;font-style:normal;font-family:var(--f-display);font-size:26px;font-weight:800;flex:none}
+
+/* Schritte */
+.steps{display:grid;gap:20px;flex:1}
+.step{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;text-align:center;background:var(--soft);border:3px solid var(--line);border-radius:22px;padding:24px 16px}
+.step .num,.num{width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:var(--f-display);font-size:28px;font-weight:800;flex:none}
+.step b{font-size:31px;line-height:1.2}
+.step small{font-size:22px;color:var(--muted);line-height:1.3}
+.banner{display:flex;align-items:center;gap:20px;padding:16px 26px;border-radius:18px;background:#E7F0FF;font-size:30px;font-weight:600}
+.banner svg{width:56px;height:56px;flex:none}
+.banner.done{background:#E8F6EE}
+.banner.next{background:#FFF4D6}
+
+/* Daumen-Check */
+.tf{display:flex;flex-direction:column;gap:14px}
+.tfrow{display:grid;grid-template-columns:60px 1fr 380px;align-items:center;gap:20px;padding:10px 22px;border-radius:18px;background:var(--soft);border:3px solid var(--line);min-height:74px}
+.tfrow .q{font-size:33px;font-weight:500}
+.tfrow .num{background:none;color:var(--muted);font-size:34px}
+.ans{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:600}
+.ans svg{width:52px;height:52px;flex:none}
+.ans.t{color:var(--green)} .ans.f{color:var(--stop)}
+.ans small{color:var(--ink);font-size:21px;font-weight:500;line-height:1.2}
+.thumbs{display:flex;gap:22px;align-items:center;font-size:28px;font-weight:600}
+.thumbs svg{width:56px;height:56px}
+
+/* Papier + Markierung */
+.paper{background:#fff;border:3px solid var(--line);border-radius:18px;padding:20px 34px;background-image:repeating-linear-gradient(to bottom,transparent 0 92px,#D6E2F3 92px 94px)}
+.hand{font-family:var(--f-hand);font-size:64px;line-height:94px}
+.mk{position:relative;display:inline-block}
+.ln{position:absolute;left:-4px;right:-4px;height:7px;border-radius:4px;transform-origin:left center}
+.ln[data-b]{opacity:1;transform:scaleX(0);transition:transform .7s ease}
+.ln[data-b].on{transform:scaleX(1)}
+.legend{display:flex;gap:30px;font-size:24px;font-weight:600;align-items:center;flex-wrap:wrap}
+
+/* Regel */
+.rule{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.rule h3{font-family:var(--f-display);font-size:36px;margin:0 0 12px;display:flex;align-items:center;gap:14px}
+.ok{color:var(--green);font-weight:700}.no{color:var(--stop);font-weight:700;text-decoration:line-through}
+
+/* Fehler finden */
+.mist{display:grid;grid-template-columns:1fr;gap:18px}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:stretch}
+.wrong,.right{border-radius:18px;padding:10px 26px;border:3px solid var(--line);background:#fff;display:flex;align-items:center;gap:18px}
+.wrong .hand,.right .hand{font-size:50px;line-height:1.3}
+.right{background:#EAF7EF;border-color:#B9E3C8}
+.right svg,.wrong svg{width:50px;height:50px;flex:none}
+.err{position:relative}
+.err::after{content:"";position:absolute;left:-10px;right:-10px;top:4px;bottom:0;border:5px solid var(--stop);border-radius:50%;opacity:0;transform:scale(.6);transition:all .4s ease}
+.wrong.on2 .err::after{opacity:1;transform:none}
+.fix{color:var(--green);text-decoration:underline;text-decoration-thickness:5px;text-underline-offset:10px}
+
+/* Satzrahmen */
+.frames{display:flex;flex-direction:column;gap:14px}
+.frame{display:flex;align-items:center;gap:14px;font-size:34px;font-weight:500;background:var(--soft);border:3px solid var(--line);border-radius:16px;padding:12px 22px;flex-wrap:wrap}
+.gap{display:inline-block;min-width:140px;border-bottom:4px solid #9AA8BE;height:34px}
+.eg{font-family:var(--f-hand);font-size:44px;color:var(--ink)}
+
+/* Fertig / weiter */
+.pack{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.pack .card{display:flex;flex-direction:column;align-items:center;gap:14px;font-size:30px;font-weight:600;text-align:center}
+
+[hidden]{display:none!important}
+/* Stopp-Bild */
+.ov{position:absolute;inset:0;background:var(--stop);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:20;cursor:pointer}
+.ov svg{width:300px;height:300px;color:#fff}
+.ov b{font-family:var(--f-display);font-size:130px;line-height:1}
+.ov span{font-size:40px;font-weight:600;display:flex;align-items:center;gap:16px}
+.ov span svg{width:64px;height:64px}
+.ov small{font-size:20px;opacity:.75;margin-top:20px}
+.vpill{position:absolute;left:0;bottom:-6px;font:inherit;font-size:15px;color:#8896AC;background:transparent;border:1.5px dashed #C3CDDC;border-radius:999px;padding:5px 12px;cursor:pointer}
+/* Deck Lesespur */
+.agenda.three{grid-template-columns:repeat(3,1fr)}
+.demo{display:grid;grid-template-columns:820px 1fr;gap:28px;flex:1;min-height:0}
+.mapbox{background:#fff;border:3px solid var(--line);border-radius:18px;padding:8px;display:flex;align-items:center;justify-content:center}
+.mapbox svg{width:800px;height:520px}
+.map text{font-family:var(--f-body);font-weight:600}
+.draw[data-b]{opacity:1;transform:none;stroke-dasharray:100;stroke-dashoffset:100;transition:stroke-dashoffset 1.6s ease}
+.draw[data-b].on{stroke-dashoffset:0}
+.dsteps{display:flex;flex-direction:column;gap:12px}
+.dstep{display:flex;align-items:center;gap:16px;font-size:29px;font-weight:600;background:var(--soft);border:3px solid var(--line);border-radius:16px;padding:10px 18px}
+.dstep svg{width:46px;height:46px;flex:none}
+.dstep .num{width:44px;height:44px;font-size:24px}
+.dstep small{display:block;font-size:20px;color:var(--muted);font-weight:500}
+.strip{display:flex;align-items:center;gap:14px;border:3px dashed var(--ink);border-radius:10px;padding:8px 16px;font-family:var(--f-hand);font-size:40px;background:#FFFBEA}
+.strip svg{width:44px;height:44px;flex:none}
+.read{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;flex:1}
+.rule6{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;flex:1}
+.rule6 .step{justify-content:center}
+.rule6 .step.later{background:#fff;border-style:dashed}
+.lvl{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.lvl .card{display:flex;align-items:center;gap:24px}
+.lvl .card b{font-family:var(--f-display);font-size:40px;display:block}
+.lvl .card span{font-size:26px;color:var(--muted)}
+.tag{display:inline-grid;place-items:center;min-width:76px;height:56px;border-radius:14px;background:var(--ink);color:#fff;font-family:var(--f-display);font-size:30px;font-weight:800;padding:0 10px}
+.todo{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.todo .step{padding:18px 12px}
+.todo .step b{font-size:27px}
+.boxes{display:flex;flex-direction:column;gap:6px;font-size:23px;font-weight:600;text-align:left}
+.boxes span::before{content:"☐ ";font-size:26px}
+.mist .wrong .hand,.mist .right .hand{font-size:40px;line-height:1.25}
+.mist .lbl2{font-family:var(--f-body);font-size:20px;color:var(--muted);font-weight:600;display:block}
+.mrow .wrong,.mrow .right{padding:8px 22px}
+.wed{display:flex;align-items:center;gap:24px;font-size:36px;font-weight:700;background:#FFF4D6;border:3px dashed var(--amber);border-radius:18px;padding:18px 28px}
+.wed svg{width:70px;height:70px;flex:none}
+.rule6 .ico{width:72px;height:72px}
+.rule6 .step{padding:14px 12px;gap:10px;min-height:0}
+.rule6{grid-template-rows:1fr 1fr;min-height:0}
+.tf .ans small{font-size:23px}
+.slide.puffer>.row:first-child{margin-top:18px}
+
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-person" viewBox="0 0 24 28"><circle cx="12" cy="7.5" r="5.5" fill="currentColor"/><path d="M2 27c0-7 4.5-11 10-11s10 4 10 11z" fill="currentColor"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 64 64"><rect x="10" y="12" width="44" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="5"/><path d="M4 48h56l-4 6H8z" fill="currentColor"/><path d="M28 22l10 5-10 5z" fill="currentColor"/></symbol>
+    <symbol id="i-book" viewBox="0 0 64 64"><path d="M32 14C25 9 15 8 6 10v38c9-2 19-1 26 4 7-5 17-6 26-4V10c-9-2-19-1-26 4z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M32 14v38" stroke="currentColor" stroke-width="5"/></symbol>
+    <symbol id="i-heft" viewBox="0 0 64 64"><rect x="12" y="6" width="40" height="52" rx="4" fill="none" stroke="currentColor" stroke-width="5"/><path d="M20 6v52M28 20h16M28 30h16M28 40h12" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></symbol>
+    <symbol id="i-sheet" viewBox="0 0 64 64"><path d="M14 6h26l12 12v40H14z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M40 6v12h12M22 30h20M22 40h20M22 50h12" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></symbol>
+    <symbol id="i-plan" viewBox="0 0 64 64"><rect x="8" y="8" width="48" height="48" rx="5" fill="none" stroke="currentColor" stroke-width="5"/><path d="M16 22l4 4 7-8M32 22h16M16 38l4 4 7-8M32 38h16" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-postit" viewBox="0 0 64 64"><path d="M8 8h48v34L42 56H8z" fill="#FFE27A" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M42 56V42h14" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M16 22h28M16 32h20" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 64 64"><path d="M4 32s10-18 28-18 28 18 28 18-10 18-28 18S4 32 4 32z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><circle cx="32" cy="32" r="9" fill="currentColor"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 64 64"><rect x="17" y="10" width="8" height="28" rx="4" fill="currentColor"/><rect x="26" y="5" width="8" height="32" rx="4" fill="currentColor"/><rect x="35" y="7" width="8" height="30" rx="4" fill="currentColor"/><rect x="44" y="13" width="8" height="26" rx="4" fill="currentColor"/><rect x="17" y="28" width="35" height="30" rx="12" fill="currentColor"/><rect x="6" y="30" width="9" height="22" rx="4.5" transform="rotate(-32 10 41)" fill="currentColor"/></symbol>
+    <symbol id="i-thumb" viewBox="0 0 48 48"><rect x="3" y="20" width="9" height="23" rx="2" fill="currentColor"/><path d="M14 21 22 5c3.5-.8 6.5 1.5 5.5 5.5L26 18h12c3 0 5 2.6 4.3 5.4l-3.4 14c-.6 2.8-2.7 4.6-5.6 4.6H14z" fill="currentColor"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 64 64"><circle cx="32" cy="34" r="24" fill="none" stroke="currentColor" stroke-width="5"/><path d="M32 20v15l10 6" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M24 4h16" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="currentColor"/><path d="M19 33l9 9 17-19" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-cross" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="currentColor"/><path d="M22 22l20 20M42 22 22 42" stroke="#fff" stroke-width="7" stroke-linecap="round"/></symbol>
+    <symbol id="i-tick" viewBox="0 0 40 40"><path d="M8 21l8 8 16-18" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 64 64"><path d="M50 26A20 20 0 0 0 14 22" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><path d="M8 12l6 12 12-6" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 38a20 20 0 0 0 36 4" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><path d="M56 52l-6-12-12 6" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 64 64"><path d="M44 8l12 12-30 30-16 4 4-16z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M38 14l12 12" stroke="currentColor" stroke-width="5"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 64 64"><rect x="10" y="20" width="44" height="36" rx="8" fill="none" stroke="currentColor" stroke-width="5"/><path d="M22 20v-6a10 10 0 0 1 20 0v6M10 34h44" fill="none" stroke="currentColor" stroke-width="5"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 150 34"><rect x="2" y="5" width="22" height="24" rx="4" fill="#C7CFDB"/><rect x="22" y="5" width="96" height="24" fill="currentColor"/><path d="M118 5l28 12-28 12z" fill="#F1D3A6"/><path d="M137 13l9 4-9 4z" fill="currentColor"/></symbol>
+    <symbol id="i-scissors" viewBox="0 0 64 64"><circle cx="16" cy="46" r="9" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="48" cy="46" r="9" fill="none" stroke="currentColor" stroke-width="5"/><path d="M22 40 46 8M42 40 18 8" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></symbol>
+    <symbol id="i-think" viewBox="0 0 64 64"><path d="M14 30a18 16 0 1 1 30 12l2 12-12-7a18 16 0 0 1-20-17z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><circle cx="24" cy="30" r="3" fill="currentColor"/><circle cx="32" cy="30" r="3" fill="currentColor"/><circle cx="40" cy="30" r="3" fill="currentColor"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 40 40"><path d="M8 20h22M22 11l9 9-9 9" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="i-map" viewBox="0 0 64 64"><path d="M6 14l16-6 20 6 16-6v42l-16 6-20-6-16 6z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M22 8v42M42 14v42" stroke="currentColor" stroke-width="4"/></symbol>
+    <symbol id="i-route" viewBox="0 0 64 64"><path d="M12 52C20 36 40 46 44 30S30 14 50 10" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><circle cx="12" cy="52" r="6" fill="currentColor"/><path d="M48 4v14l10-5z" fill="currentColor"/></symbol>
+    <symbol id="i-dead" viewBox="0 0 64 64"><path d="M10 54V28a14 14 0 0 1 28 0v8" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-dasharray="7 7"/><path d="M28 30l10 10 10-10" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-mix" viewBox="0 0 64 64"><rect x="4" y="8" width="24" height="22" rx="5" fill="none" stroke="currentColor" stroke-width="4"/><rect x="36" y="34" width="24" height="22" rx="5" fill="none" stroke="currentColor" stroke-width="4"/><text x="16" y="26" font-size="17" font-weight="800" text-anchor="middle" fill="currentColor" font-family="Arial">1</text><text x="48" y="52" font-size="17" font-weight="800" text-anchor="middle" fill="currentColor" font-family="Arial">7</text><path d="M30 20c14 0 18 4 18 12M52 28l-4 6-4-6" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-strip" viewBox="0 0 64 64"><rect x="4" y="22" width="56" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="6 5"/><text x="32" y="38" font-size="13" font-weight="700" text-anchor="middle" fill="currentColor" font-family="Arial">1·7·4</text></symbol>
+    <symbol id="i-later" viewBox="0 0 64 64"><path d="M14 6h26l12 12v40H14z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M22 28h20M22 38h20M22 48h12" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></symbol>
+    <symbol id="i-partner" viewBox="0 0 64 64"><circle cx="20" cy="18" r="9" fill="currentColor"/><circle cx="44" cy="18" r="9" fill="currentColor"/><path d="M4 56c0-14 7-22 16-22s16 8 16 22zM28 56c0-14 7-22 16-22s16 8 16 22z" fill="currentColor"/></symbol>
+
+  </defs>
+</svg>
+
+<div class="wrap"><div class="fit" id="fit">
+<div class="stage" id="stage">
+
+  <header class="hdr">
+    <div class="part"><b id="hPart"></b><span id="hSub"></span></div>
+    <div class="mats" id="hMats"></div>
+    <div class="social" id="hSocial" title="Sozialform"></div>
+    <div class="noise" id="hNoise"></div>
+    <div class="timer" id="hTimer" hidden>
+      <button class="t-adj" id="tMinus" aria-label="Minus 1 Minute">−</button>
+      <button class="t-face" id="tFace" aria-label="Timer starten oder pausieren">
+        <svg viewBox="0 0 92 92"><circle cx="46" cy="46" r="40" fill="none" stroke="#D8E0EC" stroke-width="8"/><circle id="tRing" cx="46" cy="46" r="40" fill="none" stroke="#14213D" stroke-width="8" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="0"/></svg>
+        <span class="tt" id="tTxt">00:00</span><span class="st" id="tSt">START</span>
+      </button>
+      <button class="t-adj" id="tPlus" aria-label="Plus 1 Minute">+</button>
+    </div>
+  </header>
+
+  <!-- 1 START -->
+  <section class="slide" data-part="Lesespur selber machen" data-sub="Deutsch · Aufsatz 1" data-noise="0">
+    <div class="eyebrow">Deutsch · Lesespur</div>
+    <h1>Heute rede ich nicht.<br><span class="hl">Ich zeige. Ihr macht.</span></h1>
+    <div class="goal"><svg><use href="#i-map"/></svg>Ziel: Ich plane meine eigene Lesespur.</div>
+    <div class="agenda three">
+      <div class="ag card"><span class="n">1</span><div><b>Lesen</b><small>A12 · Paket S. 3</small></div></div>
+      <div class="ag card"><span class="n">2</span><div><b>Zuschauen</b><small>So plane ich.</small></div></div>
+      <div class="ag card"><span class="n">3</span><div><b>Selber planen</b><small>Karte + Notizblatt</small></div></div>
+    </div>
+    <div class="watch"><svg><use href="#i-eye"/></svg>Schau zur Tafel. Dann starte.</div>
+  </section>
+
+  <!-- 2 SIGNALE (nur 56c, 56a kennt sie vom Morgen) -->
+  <section class="slide" data-k="c" data-part="Unsere Signale" data-sub="Heute ohne Worte" data-noise="0">
+    <h2>Unsere Signale heute</h2>
+    <div class="sig">
+      <div class="card" data-b="1"><svg class="big-ico" style="color:var(--stop)"><use href="#i-hand"/></svg><b>Stopp</b><span>Hand hoch.<br>Mund zu.<br>Schau zur Tafel.</span></div>
+      <div class="card" data-b="2">
+        <div class="lvls">
+          <div><i style="background:var(--blue)">0</i>still</div>
+          <div><i style="background:var(--amber)">1</i>flüstern</div>
+          <div><i style="background:var(--green)">2</i>Gruppenstimme</div>
+        </div>
+        <b>Lautstärke</b><span>Schau oben rechts.</span></div>
+      <div class="card" data-b="3"><div class="thumbs"><svg style="color:var(--green)"><use href="#i-thumb"/></svg><svg style="color:var(--stop);transform:rotate(180deg)"><use href="#i-thumb"/></svg></div><b>Ja / Nein</b><span>Zeig mit dem Daumen.</span></div>
+      <div class="card" data-b="4"><svg class="big-ico"><use href="#i-clock"/></svg><b>Timer</b><span>So viel Zeit bleibt.<br>Gong = Stopp.</span></div>
+    </div>
+  </section>
+
+  <!-- 3 A12 LESEN -->
+  <section class="slide" data-part="1 · Lesen" data-sub="A12 · Paket S. 3 · Schritte 1–6" data-noise="0" data-social="1" data-mat="paket" data-timer-c="360" data-timer-a="240">
+    <h2>Lies allein.</h2>
+    <div class="read">
+      <div class="step" data-b="1"><span class="num">1</span><svg class="big-ico"><use href="#i-sheet"/></svg><b>Paket S. 3</b><small>A12</small></div>
+      <div class="step" data-b="2"><span class="num">2</span><svg class="big-ico"><use href="#i-eye"/></svg><b>Lies Schritt 1–6</b><small>Finger am Text.</small></div>
+      <div class="step" data-b="3"><span class="num">3</span><svg class="big-ico"><use href="#i-think"/></svg><b>Was ist neu?</b><small>Denk still nach.</small></div>
+      <div class="step" data-b="4"><span class="num">4</span><svg class="big-ico" style="color:var(--blue)"><use href="#i-eye"/></svg><b>Fertig?</b><small>Schau zur Tafel.</small></div>
+    </div>
+    <div class="banner" data-b="5"><svg><use href="#i-later"/></svg>Schritt 7 und 8 kommen später.</div>
+  </section>
+
+  <!-- 4 VORMACHEN -->
+  <section class="slide" data-part="2 · Zuschauen" data-sub="So plane ich eine Lesespur" data-noise="0" data-social="1" data-mat="karte,blei,schere">
+    <h2>Schau zu.</h2>
+    <div class="demo">
+      <div class="mapbox">
+        <svg class="map" viewBox="0 0 820 540" role="img" aria-label="Erfundener Spielplatz-Plan mit Lesespur">
+          <g data-b="1">
+            <rect x="6" y="6" width="808" height="528" rx="18" fill="#EEF7E8" stroke="#B7D8A8" stroke-width="4"/>
+            <path d="M6 500h808" stroke="#D9CBA8" stroke-width="22" opacity=".6"/>
+            <!-- Tor -->
+            <g transform="translate(70,410)"><rect x="0" y="0" width="12" height="70" fill="#8C6A4A"/><rect x="58" y="0" width="12" height="70" fill="#8C6A4A"/><path d="M0 8h70" stroke="#8C6A4A" stroke-width="8"/><text x="35" y="-12" font-size="24" text-anchor="middle" fill="#14213D">Tor</text></g>
+            <!-- Brunnen -->
+            <g transform="translate(270,330)"><circle r="38" fill="#BFD9F6" stroke="#1E63D6" stroke-width="5"/><circle r="12" fill="#1E63D6"/><text y="64" font-size="24" text-anchor="middle" fill="#14213D">Brunnen</text></g>
+            <!-- Sandkasten -->
+            <g transform="translate(150,90)"><rect width="120" height="80" rx="10" fill="#F6E3B4" stroke="#C9A256" stroke-width="5"/><text x="60" y="-14" font-size="24" text-anchor="middle" fill="#14213D">Sandkasten</text></g>
+            <!-- Rutschbahn -->
+            <g transform="translate(470,400)"><path d="M0 70 L60 0 L72 8 L18 74z" fill="#F07C1A"/><rect x="58" y="0" width="10" height="72" fill="#5B6B85"/><text x="36" y="102" font-size="24" text-anchor="middle" fill="#14213D">Rutschbahn</text></g>
+            <!-- Baumhaus -->
+            <g transform="translate(530,110)"><circle cx="40" cy="40" r="46" fill="#7CC07A"/><rect x="34" y="70" width="12" height="44" fill="#8C6A4A"/><rect x="18" y="26" width="44" height="34" fill="#C98F55" stroke="#8C6A4A" stroke-width="4"/><text x="-52" y="50" font-size="24" text-anchor="middle" fill="#14213D">Baumhaus</text></g>
+            <!-- Schaukel = Ziel -->
+            <g transform="translate(700,270)"><path d="M0 70 L30 0 L60 70" fill="none" stroke="#5B6B85" stroke-width="7"/><path d="M22 18v34M38 18v34" stroke="#5B6B85" stroke-width="3"/><rect x="16" y="50" width="28" height="7" fill="#D7263D"/><text x="30" y="100" font-size="24" text-anchor="middle" fill="#14213D">Schaukel</text></g>
+            <!-- Kiosk (nur Deko) -->
+            <g transform="translate(660,430)"><rect width="80" height="44" rx="6" fill="#fff" stroke="#9AA8BE" stroke-width="4"/><path d="M-6 0h92l-10-16H4z" fill="#E2412A"/><text x="40" y="30" font-size="20" text-anchor="middle" fill="#5B6B85">Kiosk</text></g>
+          </g>
+          <!-- Weg (Bleistift, durchgezogen) -->
+          <path class="draw" data-b="2" pathLength="100" d="M110 440 C170 400 210 360 250 350 C330 330 400 400 480 410 C560 420 520 260 560 210 C610 150 690 230 725 300" fill="none" stroke="#4B5563" stroke-width="9" stroke-linecap="round"/>
+          <!-- Sackgasse (Bleistift, gestrichelt) -->
+          <g data-b="3">
+            <path d="M262 296 C250 240 230 210 215 180" fill="none" stroke="#4B5563" stroke-width="8" stroke-linecap="round" stroke-dasharray="14 12"/>
+            <g transform="translate(318,130)"><circle r="30" fill="#fff" stroke="#4B5563" stroke-width="4"/><path d="M-12 8V-2a10 10 0 0 1 20 0v4M2 0l6 8 6-8" fill="none" stroke="#14213D" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>
+          </g>
+          <!-- Nummern gemischt -->
+          <g data-b="4" font-family="Arial" font-weight="800" font-size="30" text-anchor="middle">
+            <g transform="translate(42,392)"><circle r="27" fill="#14213D"/><text y="11" fill="#fff">1</text></g>
+            <g transform="translate(330,300)"><circle r="27" fill="#14213D"/><text y="11" fill="#fff">7</text></g>
+            <g transform="translate(118,150)"><circle r="27" fill="#fff" stroke="#14213D" stroke-width="4" stroke-dasharray="8 6"/><text y="11" fill="#14213D">5</text></g>
+            <g transform="translate(560,390)"><circle r="27" fill="#14213D"/><text y="11" fill="#fff">4</text></g>
+            <g transform="translate(640,96)"><circle r="27" fill="#14213D"/><text y="11" fill="#fff">9</text></g>
+            <g transform="translate(784,262)"><circle r="27" fill="#14213D"/><text y="11" fill="#fff">3</text></g>
+          </g>
+        </svg>
+      </div>
+      <div class="dsteps">
+        <div class="dstep" data-b="1"><span class="num">1</span><svg><use href="#i-map"/></svg><span>Karte</span></div>
+        <div class="dstep" data-b="2"><span class="num">2</span><svg style="color:var(--pencil)"><use href="#i-route"/></svg><span>Weg<small>Bleistift</small></span></div>
+        <div class="dstep" data-b="3"><span class="num">3</span><svg style="color:var(--pencil)"><use href="#i-dead"/></svg><span>Sackgasse<small>führt zurück</small></span></div>
+        <div class="dstep" data-b="4"><span class="num">4</span><svg><use href="#i-mix"/></svg><span>Nummern mischen<small>Start = 1</small></span></div>
+        <div class="dstep" data-b="5"><span class="num">5</span><svg><use href="#i-scissors"/></svg><span>Lösung abschneiden<small>getrennt aufbewahren</small></span></div>
+        <div class="strip" data-b="5"><svg><use href="#i-scissors"/></svg>1 · 7 · 4 · 9 · 3</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 DAUMEN-CHECK -->
+  <section class="slide" data-part="Daumen-Check" data-sub="Stimmt das?" data-noise="0" data-social="1">
+    <div class="row" style="align-items:center;justify-content:space-between">
+      <h2>Stimmt das?</h2>
+      <div class="thumbs"><svg style="color:var(--green)"><use href="#i-thumb"/></svg>stimmt <svg style="color:var(--stop);transform:rotate(180deg)"><use href="#i-thumb"/></svg>falsch</div>
+    </div>
+    <div class="tf">
+      <div class="tfrow" data-b="1"><span class="num">1</span><span class="q">Die Nummern gehen 1, 2, 3, 4 …</span><span class="ans f" data-b="2"><svg><use href="#i-cross"/></svg><small>Gemischt: 1, 7, 4, 9 …</small></span></div>
+      <div class="tfrow" data-b="3"><span class="num">2</span><span class="q">Der Start hat immer die Nummer 1.</span><span class="ans t" data-b="4"><svg><use href="#i-check"/></svg>stimmt</span></div>
+      <div class="tfrow" data-b="5"><span class="num">3</span><span class="q">Eine Sackgasse schickt mich zurück.</span><span class="ans t" data-b="6"><svg><use href="#i-check"/></svg>stimmt</span></div>
+      <div class="tfrow" data-b="7"><span class="num">4</span><span class="q">Ich schreibe zuerst den Text.</span><span class="ans f" data-b="8"><svg><use href="#i-cross"/></svg><small>Zuerst planen, dann schreiben.</small></span></div>
+      <div class="tfrow" data-b="9"><span class="num">5</span><span class="q">Die Lösung schreibe ich auf die Karte.</span><span class="ans f" data-b="10"><svg><use href="#i-cross"/></svg><small>Auf einen Streifen, getrennt.</small></span></div>
+    </div>
+  </section>
+
+  <!-- 6 REGEL -->
+  <section class="slide" data-part="So geht eine Lesespur" data-sub="A12 · Schritte 1–6" data-noise="0" data-social="1" data-mat="paket">
+    <h2>So geht eine Lesespur.</h2>
+    <div class="rule6">
+      <div class="step" data-b="1"><span class="num">1</span><svg class="ico"><use href="#i-map"/></svg><b>Karte wählen</b><small>Plan, Grundriss, Ansichtskarte</small></div>
+      <div class="step" data-b="2"><span class="num">2</span><svg class="ico" style="color:var(--pencil)"><use href="#i-route"/></svg><b>Weg einzeichnen</b><small>mit Bleistift</small></div>
+      <div class="step" data-b="3"><span class="num">3</span><svg class="ico" style="color:var(--pencil)"><use href="#i-dead"/></svg><b>1–2 Sackgassen</b><small>führen zurück</small></div>
+      <div class="step" data-b="4"><span class="num">4</span><svg class="ico"><use href="#i-mix"/></svg><b>Nummern mischen</b><small>Start = 1</small></div>
+      <div class="step" data-b="5"><span class="num">5</span><svg class="ico"><use href="#i-strip"/></svg><b>Lösung auf Streifen</b><small>getrennt aufbewahren</small></div>
+      <div class="step later" data-b="6"><span class="num" style="background:#9AA8BE">6</span><svg class="ico" style="color:#9AA8BE"><use href="#i-later"/></svg><b style="color:var(--muted)">Erst dann: Text</b><small>später, nicht heute</small></div>
+    </div>
+  </section>
+
+  <!-- 7 FEHLER FINDEN (56c regulär) -->
+  <section class="slide" data-k="c" data-part="Fehler finden" data-sub="Notizblatt · typische Fehler" data-noise="0" data-social="1">
+    <div class="row" style="align-items:center;justify-content:space-between">
+      <h2>Findest du den Fehler?</h2>
+      <div class="thumbs"><svg style="color:var(--green)"><use href="#i-thumb"/></svg>ok <svg style="color:var(--stop);transform:rotate(180deg)"><use href="#i-thumb"/></svg>Fehler</div>
+    </div>
+    <div class="mist">
+      <div class="mrow">
+        <div class="wrong" id="cm1"><span class="hand"><span class="lbl2">Nummern</span><span class="err">1 · 2 · 3 · 4 · 5</span></span></div>
+        <div class="right" data-b="2"><svg style="color:var(--green)"><use href="#i-check"/></svg><span class="hand"><span class="lbl2">Nummern</span><span class="fix">1 · 7 · 4 · 9 · 3</span></span></div>
+      </div>
+      <div class="mrow" data-b="3">
+        <div class="wrong" id="cm2"><span class="hand"><span class="lbl2">Start</span>Tor = Nr. <span class="err">6</span></span></div>
+        <div class="right" data-b="5"><svg style="color:var(--green)"><use href="#i-check"/></svg><span class="hand"><span class="lbl2">Start</span>Tor = Nr. <span class="fix">1</span></span></div>
+      </div>
+      <div class="mrow" data-b="6">
+        <div class="wrong" id="cm3"><span class="hand"><span class="lbl2">Sackgasse</span>Sandkasten · Nr. 5 · zurück zu <span class="err">?</span></span></div>
+        <div class="right" data-b="8"><svg style="color:var(--green)"><use href="#i-check"/></svg><span class="hand"><span class="lbl2">Sackgasse</span>Sandkasten · Nr. 5 · zurück zu <span class="fix">7</span></span></div>
+      </div>
+      <div class="mrow" data-b="9">
+        <div class="wrong" id="cm4"><span class="hand"><span class="lbl2">Lösung</span><span class="err">auf der Karte</span></span></div>
+        <div class="right" data-b="11"><svg style="color:var(--green)"><use href="#i-scissors"/></svg><span class="hand"><span class="lbl2">Lösung</span><span class="fix">auf dem Streifen</span></span></div>
+      </div>
+      <span data-b="1" data-mark="cm1" style="display:none"></span>
+      <span data-b="4" data-mark="cm2" style="display:none"></span>
+      <span data-b="7" data-mark="cm3" style="display:none"></span>
+      <span data-b="10" data-mark="cm4" style="display:none"></span>
+    </div>
+  </section>
+
+  <!-- 8 AUFTRAG -->
+  <section class="slide" data-part="3 · Selber planen" data-sub="Karte + Notizblatt · Paket S. 4" data-noise="0" data-social="1" data-mat="paket,karte,blei,schere">
+    <h2>Jetzt du.</h2>
+    <div class="lvl">
+      <div class="card" data-b="1"><span class="tag">N1</span><svg class="big-ico" style="width:96px;height:96px"><use href="#i-sheet"/></svg><div><b>Karte als Kopie</b><span>aus dem Lesespuren-Heft<br>10 Stationen</span></div></div>
+      <div class="card" data-b="2"><span class="tag">N2</span><svg class="big-ico" style="width:96px;height:96px"><use href="#i-pen"/></svg><div><b>Eigene Karte</b><span>zeichnen<br>20 Stationen</span></div></div>
+    </div>
+    <div class="todo">
+      <div class="step" data-b="3"><span class="num">1</span><svg class="ico" style="color:var(--pencil)"><use href="#i-route"/></svg><b>Weg</b><small>Bleistift</small></div>
+      <div class="step" data-b="4"><span class="num">2</span><svg class="ico" style="color:var(--pencil)"><use href="#i-dead"/></svg><b>1–2 Sackgassen</b></div>
+      <div class="step" data-b="5"><span class="num">3</span><svg class="ico"><use href="#i-sheet"/></svg><b>Notizblatt</b><small>Ort · Stichwort · Nummer</small></div>
+      <div class="step" data-b="6"><span class="num">4</span><svg class="ico"><use href="#i-scissors"/></svg><b>Lösungs­streifen</b><small>abschneiden</small></div>
+    </div>
+  </section>
+
+  <!-- 9 ARBEITEN / FERTIG -->
+  <section class="slide" data-part="3 · Selber planen" data-sub="Fertig? So geht es weiter." data-noise="0" data-social="1" data-mat="paket,plan" data-timer-c="1200">
+    <h2>Fertig?</h2>
+    <div class="steps" style="grid-template-columns:1.25fr 1fr 1fr;flex:none">
+      <div class="step" data-b="1"><span class="num">1</span><svg class="ico"><use href="#i-partner"/></svg><b>Partner prüft</b>
+        <div class="boxes"><span>Nummern gemischt</span><span>Sackgasse führt zurück</span></div></div>
+      <div class="step" data-b="2"><span class="num">2</span><span class="noise" style="gap:0"><span class="lv on l1" style="transform:none">1</span></span><b>flüstern</b><small>nur beim Prüfen</small></div>
+      <div class="step" data-b="3"><span class="num">3</span><svg class="ico"><use href="#i-plan"/></svg><b>Wochenplan</b><small>Deutsch · nächste Zeile</small></div>
+    </div>
+    <div class="frames" data-k="c" data-b="4">
+      <div class="frame"><span class="tag" style="height:46px;font-size:24px">6. Kl.</span>Die Nummern sind gemischt, weil <span class="gap" style="min-width:300px"></span></div>
+      <div class="frame" style="background:#fff"><span class="eg">… sonst findet sogar mein stiller Lehrer den Weg, ohne ein Wort zu lesen.</span></div>
+    </div>
+    <div class="wed" data-k="a" data-b="4"><svg><use href="#i-clock"/></svg><span>Weiter am Mittwoch im Atelier.<br><small style="font-size:24px;font-weight:600;color:var(--muted)">6. Kl.: «Warum gemischt?» auf dem Notizblatt beantworten.</small></span></div>
+  </section>
+
+  <!-- 10 PUFFER 56a: FEHLER FINDEN (Atelier Mi) -->
+  <section class="slide puffer" data-k="a" data-part="Fehler finden" data-sub="Atelier Mittwoch · Notizblatt prüfen" data-noise="0" data-social="1">
+    <div class="row" style="align-items:center;justify-content:space-between">
+      <h2>Findest du den Fehler?</h2>
+      <div class="thumbs"><svg style="color:var(--green)"><use href="#i-thumb"/></svg>ok <svg style="color:var(--stop);transform:rotate(180deg)"><use href="#i-thumb"/></svg>Fehler</div>
+    </div>
+    <div class="mist">
+      <div class="mrow">
+        <div class="wrong" id="am1"><span class="hand"><span class="lbl2">Nummern</span><span class="err">1 · 2 · 3 · 4 · 5</span></span></div>
+        <div class="right" data-b="2"><svg style="color:var(--green)"><use href="#i-check"/></svg><span class="hand"><span class="lbl2">Nummern</span><span class="fix">1 · 7 · 4 · 9 · 3</span></span></div>
+      </div>
+      <div class="mrow" data-b="3">
+        <div class="wrong" id="am2"><span class="hand"><span class="lbl2">Start</span>Tor = Nr. <span class="err">6</span></span></div>
+        <div class="right" data-b="5"><svg style="color:var(--green)"><use href="#i-check"/></svg><span class="hand"><span class="lbl2">Start</span>Tor = Nr. <span class="fix">1</span></span></div>
+      </div>
+      <div class="mrow" data-b="6">
+        <div class="wrong" id="am3"><span class="hand"><span class="lbl2">Sackgasse</span>Sandkasten · Nr. 5 · zurück zu <span class="err">?</span></span></div>
+        <div class="right" data-b="8"><svg style="color:var(--green)"><use href="#i-check"/></svg><span class="hand"><span class="lbl2">Sackgasse</span>Sandkasten · Nr. 5 · zurück zu <span class="fix">7</span></span></div>
+      </div>
+      <div class="mrow" data-b="9">
+        <div class="wrong" id="am4"><span class="hand"><span class="lbl2">Lösung</span><span class="err">auf der Karte</span></span></div>
+        <div class="right" data-b="11"><svg style="color:var(--green)"><use href="#i-scissors"/></svg><span class="hand"><span class="lbl2">Lösung</span><span class="fix">auf dem Streifen</span></span></div>
+      </div>
+      <span data-b="1" data-mark="am1" style="display:none"></span>
+      <span data-b="4" data-mark="am2" style="display:none"></span>
+      <span data-b="7" data-mark="am3" style="display:none"></span>
+      <span data-b="10" data-mark="am4" style="display:none"></span>
+    </div>
+  </section>
+
+
+  <nav class="nav">
+    <div class="dots" id="dots"></div>
+    <button class="kpill" id="kPill" type="button" title="Klasse umschalten (K)"></button>
+    <span class="keys">← → · Leertaste = Timer · S = Stopp · F = Vollbild</span>
+    <span class="count" id="count"></span>
+    <button class="nbtn stopb" id="bStop" aria-label="Stopp-Signal"><svg><use href="#i-hand"/></svg></button>
+    <button class="nbtn prev" id="bPrev" aria-label="Zurück"><svg style="transform:rotate(180deg)"><use href="#i-arrow"/></svg></button>
+    <button class="nbtn next" id="bNext" aria-label="Weiter"><svg><use href="#i-arrow"/></svg></button>
+  </nav>
+
+  <div class="ov" id="ov" hidden>
+    <svg><use href="#i-hand"/></svg>
+    <b id="ovTitle">STOP</b>
+    <span>Hand up <svg><use href="#i-eye"/></svg> Look at the board</span>
+    <small>Antippen = weiter</small>
+  </div>
+</div>
+</div></div>
+
+<script>
+/* DECK-Konfiguration: key = Speicher-Schlüssel, kDefault = 'c' | 'a' */
+const DECK={key:'w11-lesespur',kDefault:'c'};
+(function(){
+  const stage=document.getElementById('stage'), fit=document.getElementById('fit');
+  const all=[...document.querySelectorAll('.slide')];
+  let slides=[], cur=0, step=0, variant='A', klass=DECK.kDefault||'c';
+  try{const v=localStorage.getItem(DECK.key+':v'); if(v==='A'||v==='B') variant=v;}catch(e){}
+  try{const k=localStorage.getItem(DECK.key+':k'); if(k==='a'||k==='c') klass=k;}catch(e){}
+
+  function doFit(){const w=fit.clientWidth,h=fit.clientHeight,s=Math.min(w/1600,h/900);stage.style.transform=`translate(${(w-1600*s)/2}px,${(h-900*s)/2}px) scale(${s})`;}
+  window.addEventListener('resize',doFit); doFit();
+
+  const ok=el=>{const v=el.closest('[data-var]'); if(v&&v.dataset.var!==variant) return false; const k=el.closest('[data-k]'); return !k||k.dataset.k===klass;};
+  const maxStep=s=>{let m=0; s.querySelectorAll('[data-b]').forEach(e=>{if(ok(e)) m=Math.max(m,+e.dataset.b)}); return m;};
+  const ds=(s,n)=>s.dataset[n+(klass==='a'?'A':'C')]??s.dataset[n];
+
+  /* Kopfzeile */
+  const MATS={
+    dossier:['i-sheet','Dossier'],heft:['i-heft','Deutschheft'],ah:['i-book','Arbeitsheft'],paket:['i-sheet','Paket S. 3–4'],
+    plan:['i-plan','Wochenplan'],pc:['i-laptop','Laptop'],postit:['i-postit','Post-it'],logbuch:['i-heft','Logbuch'],karte:['i-sheet','Karte'],
+    blei:['i-pencil','Bleistift','var(--pencil)'],rot:['i-pencil','rot','var(--red)'],blau:['i-pencil','blau','var(--blue)'],
+    orange:['i-pencil','orange','var(--orange)'],gruen:['i-pencil','grün','var(--green)'],schere:['i-scissors','Schere']
+  };
+  const NOISE=['still','flüstern','Gruppenstimme'];
+  const hPart=document.getElementById('hPart'),hSub=document.getElementById('hSub'),hMats=document.getElementById('hMats'),hSocial=document.getElementById('hSocial'),hNoise=document.getElementById('hNoise');
+  function header(s){
+    hPart.textContent=ds(s,'part')||''; hSub.textContent=ds(s,'sub')||'';
+    const mats=ds(s,'mat'); hMats.innerHTML=(mats?mats.split(','):[]).map(k=>{const m=MATS[k.trim()]; if(!m) return ''; const [ic,t,col]=m; return col?`<span class="chip"><svg class="pc" style="color:${col}"><use href="#${ic}"/></svg>${t}</span>`:`<span class="chip"><svg><use href="#${ic}"/></svg>${t}</span>`}).join('');
+    const n=+(ds(s,'social')||0); hSocial.hidden=!n; hSocial.innerHTML=Array.from({length:n},()=>'<svg><use href="#i-person"/></svg>').join('');
+    const lv=+(ds(s,'noise')||0); hNoise.innerHTML=[0,1,2].map(i=>`<span class="lv l${i} ${i===lv?'on':''}">${i}</span>`).join('')+`<span class="lbl">${NOISE[lv]}</span>`;
+  }
+
+  /* Timer (pro Folie und Klasse) */
+  const timers={}; let actx=null;
+  function gong(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    [523.25,659.25,783.99].forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.value=f;const t=actx.currentTime+i*.35;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.35,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+1.6);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+1.7);});}catch(e){}}
+  const hT=document.getElementById('hTimer'),tTxt=document.getElementById('tTxt'),tSt=document.getElementById('tSt'),tRing=document.getElementById('tRing');
+  function tget(){const s=slides[cur]; const sec=+(ds(s,'timer')||0); if(!sec) return null; const id=all.indexOf(s)+klass; if(!timers[id]) timers[id]={total:sec,left:sec*1000,run:false,last:0,done:false}; return timers[id];}
+  const fmt=ms=>{const t=Math.ceil(ms/1000);return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');};
+  function tDraw(){const t=tget(); hT.hidden=!t; if(!t) return;
+    tTxt.textContent=fmt(t.left); tSt.textContent=t.run?'PAUSE':(t.left<=0?'ENDE':'START');
+    hT.classList.toggle('run',t.run); hT.classList.toggle('done',t.done);
+    const frac=Math.max(0,t.left/(t.total*1000)); tRing.style.strokeDashoffset=(251.3*(1-frac)).toFixed(1); tRing.style.stroke=frac<.2?'var(--stop)':'var(--ink)';}
+  function tToggle(){const t=tget(); if(!t) return; try{actx=actx||new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume();}catch(e){}
+    if(t.left<=0){t.left=t.total*1000;t.done=false;} t.run=!t.run; t.last=Date.now(); tDraw();}
+  function tAdj(d){const t=tget(); if(!t) return; t.left=Math.max(0,t.left+d*60000); t.total=Math.max(t.total,Math.ceil(t.left/1000)); t.done=false; tDraw();}
+  setInterval(()=>{const now=Date.now(); let any=false;
+    for(const k in timers){const t=timers[k]; if(!t.run) continue; t.left-=now-t.last; t.last=now; any=true;
+      if(t.left<=0){t.left=0;t.run=false;t.done=true;gong();showStop('STOP');}}
+    if(any) tDraw();},250);
+  document.getElementById('tFace').onclick=tToggle;
+  document.getElementById('tMinus').onclick=()=>tAdj(-1);
+  document.getElementById('tPlus').onclick=()=>tAdj(1);
+
+  /* Stopp-Bild */
+  const ov=document.getElementById('ov'),ovT=document.getElementById('ovTitle');
+  function showStop(t){ovT.textContent=t||'STOP'; ov.hidden=false;}
+  ov.onclick=()=>{ov.hidden=true;};
+  document.getElementById('bStop').onclick=()=>showStop('STOP');
+
+  /* Klassen-Umschalter K (56c / 56a) und Varianten-Umschalter V */
+  const kPill=document.getElementById('kPill');
+  function rebuild(keepSlide){
+    const was=slides[cur];
+    slides=all.filter(s=>!s.dataset.k||s.dataset.k===klass);
+    cur=Math.max(0,keepSlide&&was?slides.indexOf(was):0); if(cur<0) cur=0;
+    step=Math.min(step,maxStep(slides[cur]));
+    dots.innerHTML=slides.map(s=>`<i class="${s.classList.contains('puffer')?'pz':''}"></i>`).join('');
+  }
+  function setK(k){klass=k; document.body.dataset.k=k; try{localStorage.setItem(DECK.key+':k',k)}catch(e){} kPill.textContent=(k==='a'?'5./6.a':'5./6.c')+'  ⇄'; rebuild(true); render();}
+  kPill.onclick=()=>setK(klass==='c'?'a':'c');
+  function setV(v){variant=v; document.body.dataset.v=v; try{localStorage.setItem(DECK.key+':v',v)}catch(e){} document.querySelectorAll('[data-vtoggle]').forEach(b=>b.textContent='Variante '+v+'  ⇄'); step=Math.min(step,maxStep(slides[cur])); render();}
+  document.querySelectorAll('[data-vtoggle]').forEach(b=>b.onclick=()=>setV(variant==='A'?'B':'A'));
+
+  /* Darstellung */
+  const dots=document.getElementById('dots'),bNext=document.getElementById('bNext'),count=document.getElementById('count');
+  function render(){
+    all.forEach(s=>s.classList.toggle('active',s===slides[cur]));
+    const s=slides[cur];
+    s.querySelectorAll('[data-b]').forEach(e=>e.classList.toggle('on',+e.dataset.b<=step));
+    s.querySelectorAll('[data-mark]').forEach(m=>{const w=document.getElementById(m.dataset.mark); if(w) w.classList.toggle('on2',+m.dataset.b<=step);});
+    header(s); tDraw();
+    [...dots.children].forEach((d,i)=>{d.classList.toggle('cur',i===cur); d.classList.toggle('done',i<cur);});
+    count.textContent=(cur+1)+' / '+slides.length;
+    bNext.classList.toggle('more',step<maxStep(s));
+    if(window.onDeckRender) window.onDeckRender(s,step,klass);
+  }
+  function next(){const m=maxStep(slides[cur]); if(step<m) step++; else if(cur<slides.length-1){cur++;step=0;} render();}
+  function prev(){if(step>0) step--; else if(cur>0){cur--;step=maxStep(slides[cur]);} render();}
+  bNext.onclick=next; document.getElementById('bPrev').onclick=prev;
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key==='Enter'){e.preventDefault(); if(!ov.hidden){ov.hidden=true;return;} next();}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault(); prev();}
+    else if(e.key===' '){e.preventDefault(); tToggle();}
+    else if(e.key==='s'||e.key==='S'){ov.hidden?showStop('STOP'):(ov.hidden=true);}
+    else if(e.key==='Escape'){ov.hidden=true;}
+    else if(e.key==='f'||e.key==='F'){try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{});}catch(err){}}
+    else if(e.key==='k'||e.key==='K'){setK(klass==='c'?'a':'c');}
+    else if(e.key==='v'||e.key==='V'){setV(variant==='A'?'B':'A');}
+  });
+  /* Test-Hook für Screenshots: ?k=a&s=3&b=5 */
+  const q=new URLSearchParams(location.search);
+  document.body.dataset.v=variant;
+  setK(q.get('k')==='a'?'a':(q.get('k')==='c'?'c':klass));
+  if(q.get('s')){cur=Math.min(slides.length-1,+q.get('s')-1); step=q.get('b')==='max'?maxStep(slides[cur]):+(q.get('b')||0); render();}
+})();
+</script>
+
+
+</body></html>
